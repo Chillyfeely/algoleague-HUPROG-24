@@ -1,49 +1,70 @@
-# Define a function to generate a list of prime numbers up to n using the Sieve of Eratosthenes algorithm.
-def sieve(n):
-    # Initialize a list of boolean values representing the numbers from 0 to n (inclusive).
-    primes = [True] * (n + 1)
-    # Set the values for 0 and 1 to False as they are not prime.
-    primes[0] = primes[1] = False
-    # Iterate over the numbers from 2 to the square root of n (rounded up).
-    for i in range(2, int(n**0.5) + 1):
-        # If the current number is still marked as prime,
-        if primes[i]:
-            # Mark its multiples as not prime.
-            for j in range(i * i, n + 1, i):
-                primes[j] = False
-    # Return the list of boolean values, where True indicates that the corresponding number is prime.
-    return primes
+from collections import defaultdict
+from math import factorial
 
 
-# Define a function to count the number of prime pairs for each secret key that add up to the key value.
-def secret_keys(N, A):
-    # Find the maximum key value.
-    max_key = max(A)
-    # Generate a list of prime numbers up to the maximum key value.
-    prime_flags = sieve(max_key)
-    # Generate a list of prime numbers from the prime flags.
-    prime_list = [i for i, is_prime in enumerate(prime_flags) if is_prime]
-
-    # Iterate over the secret keys.
-    for key in A:
-        # Initialize the count of prime pairs.
-        count = 0
-        # Iterate over the prime numbers.
-        for prime in prime_list:
-            # If the current prime number is greater than half of the key value, break the loop.
-            if prime > key // 2:
-                break
-            # If the difference between the key value and the current prime number is also a prime number,
-            if prime_flags[key - prime]:
-                # Increment the count of prime pairs.
-                count += 1
-        # Print the count of prime pairs for the current key.
-        print(count)
+# Define a recursive function to find all paths from start to end with a maximum length of 3.
+def dfs(graph, start, end, path, all_paths):
+    path = path + [start]
+    # If the start node is the end node and the path length is 3, add the path to all_paths.
+    if start == end and len(path) == 3:
+        all_paths.add(tuple(path))
+    # If the path length is less than 3, continue to explore the graph.
+    elif len(path) < 3:  # Limit path length to 3 (including start and end)
+        for node in graph[start]:
+            # Avoid cycles by checking if the node is already in the path.
+            if node not in path:
+                dfs(graph, node, end, path, all_paths)
 
 
-# Read the number of secret keys from the input.
-N = int(input())
-# Read the secret keys from the input.
-A = list(map(int, input().split()))
-# Count the number of prime pairs for each secret key that add up to the key value.
-secret_keys(N, A)
+# Define a function to find all valid paths in the graph.
+def find_threesome_paths(graph, n):
+    valid_paths = defaultdict(set)
+    # Iterate over all pairs of nodes.
+    for start in range(1, n + 1):
+        for end in range(1, n + 1):
+            # Avoid paths from a node to itself.
+            if start != end:
+                all_paths = set()
+                # Find all paths from start to end.
+                dfs(graph, start, end, [], all_paths)
+                # If there are any paths, add them to valid_paths.
+                if all_paths:
+                    valid_paths[(start, end)].update(all_paths)
+    return valid_paths
+
+
+# Define a function to calculate the binomial coefficient.
+def binomial_coefficient(n, k):
+    if n < k:
+        return 0
+    # Use the formula n! / (k!(n-k)!)
+    return factorial(n) // (factorial(k) * factorial(n - k))
+
+
+# Define a function to read the input and find all valid paths.
+def main():
+    first_line = input().split()
+    n, m, k = int(first_line[0]), int(first_line[1]), int(first_line[2])
+    graph = defaultdict(list)
+
+    # Read the edges of the graph.
+    for _ in range(m):
+        edge = input().split()
+        a, b = int(edge[0]), int(edge[1])
+        graph[a].append(b)
+
+    # Find all valid paths.
+    valid_paths = find_threesome_paths(graph, n)
+    sum_of_ways = 0
+
+    # Calculate the sum of the binomial coefficients of the lengths of the valid paths.
+    for _, paths in valid_paths.items():
+        ways = binomial_coefficient(len(paths), k)
+        sum_of_ways += ways
+
+    # Print the sum of the binomial coefficients.
+    print(sum_of_ways)
+
+
+if __name__ == "__main__":
+    main()
